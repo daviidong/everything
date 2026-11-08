@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>音频按钮</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 24px;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom));
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    background: #f5f5f7;
+  }
+  h1 { font-size: 20px; margin: 0 0 8px; color: #333; }
+  button {
+    width: 100%;
+    max-width: 340px;
+    padding: 18px 24px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+    background: #007aff;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: transform 0.1s, background 0.2s;
+    touch-action: manipulation;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  button:active { transform: scale(0.97); background: #0062cc; }
+  button.playing { background: #34c759; }
+  #tip { font-size: 13px; color: #888; text-align: center; max-width: 340px; }
+</style>
+</head>
+<body>
+
+<h1>点按钮播放音频</h1>
+
+<button data-src="audio1.mp3">按钮 1</button>
+<button data-src="audio2.mp3">按钮 2</button>
+<button data-src="audio3.mp3">按钮 3</button>
+
+<p id="tip">如果没声音，请检查 iPhone 侧面的静音拨片和音量。</p>
+
+<script>
+  const player = new Audio();
+  player.preload = 'auto';
+  let currentBtn = null;
+
+  // 提前加载所有音频，减少首次点击延迟
+  const srcs = [...document.querySelectorAll('button[data-src]')].map(b => b.dataset.src);
+  srcs.forEach(s => { const a = new Audio(); a.preload = 'auto'; a.src = s; });
+
+  document.querySelectorAll('button[data-src]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const src = btn.dataset.src;
+
+      if (currentBtn === btn && !player.paused) {
+        player.pause();
+        player.currentTime = 0;
+        btn.classList.remove('playing');
+        currentBtn = null;
+        return;
+      }
+
+      player.src = src;
+      const p = player.play();
+      if (p && p.catch) {
+        p.catch(err => {
+          alert('播放失败：' + err.message +
+                '\n\n请检查：\n1. 音频文件是否在同一文件夹\n2. 是否通过 http(s) 网址打开（不要用文件 App 直接打开）\n3. iPhone 静音拨片是否关闭');
+        });
+      }
+
+      if (currentBtn) currentBtn.classList.remove('playing');
+      btn.classList.add('playing');
+      currentBtn = btn;
+    });
+  });
+
+  player.addEventListener('ended', () => {
+    if (currentBtn) currentBtn.classList.remove('playing');
+    currentBtn = null;
+  });
+</script>
+
+</body>
+</html>
